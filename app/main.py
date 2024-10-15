@@ -104,8 +104,9 @@ APP1_MODAL1_BLOCK5_ID = "APP1_MODAL1_BLOCK5_ID"
 APP1_MODAL1_BLOCK5_ACTIONID = "APP1_MODAL1_BLOCK5_ACTIONID"
 
 DIFY_API_APP1_TOKEN = os.environ.get("DIFY_API_APP1_TOKEN")
+DIFY_API_APP2_TOKEN = os.environ.get("DIFY_API_APP2_TOKEN")
 DIFY_API_TOKEN_USER = os.environ.get("DIFY_API_TOKEN_USER")
-DIFY_API_APP1_URL = os.environ.get("DIFY_API_APP1_URL")
+DIFY_API_APP_URL = os.environ.get("DIFY_API_APP_URL")
 
 
 def app1_create_view(
@@ -243,7 +244,7 @@ def handle_action_app1_modal1_block2(
     )
 
     response = requests.post(
-        DIFY_API_APP1_URL,
+        DIFY_API_APP_URL,
         headers={"Authorization": f"Bearer {DIFY_API_APP1_TOKEN}"},
         json={
             "inputs": {
@@ -320,6 +321,20 @@ def handle_view_app1_callback(ack: Ack, body: dict, logger: logging.Logger):
     logger.debug(created_message)
     logger.debug(selected_user)
 
+    ## 画像生成
+    response = requests.post(
+        DIFY_API_APP_URL,
+        headers={"Authorization": f"Bearer {DIFY_API_APP2_TOKEN}"},
+        json={
+            "user": DIFY_API_TOKEN_USER,
+            "inputs": {}
+        },
+    )
+
+    response_json = response.json()
+    prompt = response_json["data"]["outputs"]["prompt"]
+    image_url = response_json["data"]["outputs"]["url"]
+
     url = os.environ.get(f"WEBHOOK_URL_{selected_user}", None)
 
     if url:
@@ -341,8 +356,8 @@ def handle_view_app1_callback(ack: Ack, body: dict, logger: logging.Logger):
                 },
                 "accessory": {
                     "type": "image",
-                    "image_url": "https://pbs.twimg.com/profile_images/625633822235693056/lNGUneLX_400x400.jpg",
-                    "alt_text": "cute cat",
+                    "image_url": f"{image_url}",
+                    "alt_text": f"{prompt}",
                 },
             },
             {"type": "divider"},
