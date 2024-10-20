@@ -131,41 +131,9 @@ def handle_command_yaruki_reminder(
     dt_now = datetime.datetime.now(zoneinfo.ZoneInfo("Asia/Tokyo"))
     now = dt_now.strftime("%Y年%m月%d日 %H:%M:%S")
 
-    response = requests.post(
-        DIFY_API_APP_URL,
-        headers={"Authorization": f"Bearer {DIFY_API_APP3_TOKEN}"},
-        json={
-            "inputs": {
-                "chat_history": json.dumps(messages, ensure_ascii=False),
-                "date": now,
-            },
-            "response_mode": "blocking",
-            "user": DIFY_API_TOKEN_USER,
-        },
-    )
-
-    response_json = response.json()
-    task_list = response_json["data"]["outputs"]["task_list"]
-
-    for task in task_list:
-        term = task["term"]
-        description = task["description"]
-        status = task["status"]
-
-        parsed_date = dateparser.parse(term.split("～")[0])
-
-        if parsed_date:
-
-            client.chat_postEphemeral(
-                channel=body["channel_id"],
-                user=body["user_id"],
-                text=f"{parsed_date.strftime('%Y年%m月%d日 %H:%M:%S')}にリマインダーをセットします。\n\n{description}\n\n頑張ってね！！（ここ生成する）",
-            )
-
     client.chat_scheduleMessage(
-        channel=body["channel_id"],
-        user=body["user_id"],
-        text="タスクは終わったかな？？（スケジュールメッセージ",
+        channel=body["user_id"],
+        text="社内行事の段取りは順調に進んでる？",
         post_at=int(time.time()) + 60,
     )
 
@@ -205,6 +173,10 @@ APP2_MODAL1_BLOCK4_ACTIONID = "APP2_MODAL1_BLOCK4_ACTIONID"
 ### コマンドアプリ
 DIFY_API_APP4_TOKEN = os.environ.get("DIFY_API_APP4_TOKEN")
 
+
+## ショートカットアプリ２
+APP3_SHORTCUT_ID = "test_shortcut3"
+APP3_CALLBACK_ID = "APP_3_CALLBACK_ID"
 
 def app1_create_view(
     callback_id: str,
