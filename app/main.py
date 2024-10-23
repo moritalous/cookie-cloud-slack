@@ -22,38 +22,38 @@ app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
 # 'こんにちは' を含むメッセージをリッスンします
 # 指定可能なリスナーのメソッド引数の一覧は以下のモジュールドキュメントを参考にしてください：
 # https://tools.slack.dev/bolt-python/api-docs/slack_bolt/kwargs_injection/args.html
-@app.message("こんにちは")
-def message_hello(message, say):
-    # イベントがトリガーされたチャンネルへ say() でメッセージを送信します
+# @app.message("こんにちは")
+# def message_hello(message, say):
+#     # イベントがトリガーされたチャンネルへ say() でメッセージを送信します
 
-    blocks = [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"こんにちは、<@{message['user']}> さん！",
-            },
-        },
-        {"type": "divider"},
-        {
-            "type": "actions",
-            "elements": [
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": f"クリックしてください",
-                    },
-                    "value": "click_me_123",
-                    "action_id": "button_click",
-                }
-            ],
-        },
-    ]
+#     blocks = [
+#         {
+#             "type": "section",
+#             "text": {
+#                 "type": "mrkdwn",
+#                 "text": f"こんにちは、<@{message['user']}> さん！",
+#             },
+#         },
+#         {"type": "divider"},
+#         {
+#             "type": "actions",
+#             "elements": [
+#                 {
+#                     "type": "button",
+#                     "text": {
+#                         "type": "plain_text",
+#                         "text": f"クリックしてください",
+#                     },
+#                     "value": "click_me_123",
+#                     "action_id": "button_click",
+#                 }
+#             ],
+#         },
+#     ]
 
-    say(blocks=blocks)
+#     say(blocks=blocks)
 
-    print(message)
+#     print(message)
 
 
 @app.command("/command")
@@ -133,8 +133,8 @@ def handle_command_yaruki_reminder(
 
     client.chat_scheduleMessage(
         channel=body["user_id"],
-        text="社内行事の段取りは順調に進んでる？",
-        post_at=int(time.time()) + 60,
+        text="議事録の修正終わった？🍔",
+        post_at=int(time.time()) + 30,
     )
 
 
@@ -178,6 +178,7 @@ DIFY_API_APP4_TOKEN = os.environ.get("DIFY_API_APP4_TOKEN")
 APP3_SHORTCUT_ID = "test_shortcut3"
 APP3_CALLBACK_ID = "APP_3_CALLBACK_ID"
 
+
 def app1_create_view(
     callback_id: str,
     message: str = None,
@@ -193,7 +194,7 @@ def app1_create_view(
             "action_id": APP1_MODAL1_BLOCK1_ACTIONID,
             "multiline": True,
         },
-        "label": {"type": "plain_text", "text": "変換前"},
+        "label": {"type": "plain_text", "text": "送りたい内容"},
     }
     if message:
         block_1["element"]["initial_value"] = message
@@ -205,7 +206,7 @@ def app1_create_view(
                 "type": "button",
                 "text": {
                     "type": "plain_text",
-                    "text": f"変換",
+                    "text": f"やわらかくする",
                 },
                 "value": "click_me_123",
                 "action_id": APP1_MODAL1_BLOCK2_ACTIONID,
@@ -225,7 +226,7 @@ def app1_create_view(
                 "multiline": True,
                 "initial_value": created_message,
             },
-            "label": {"type": "plain_text", "text": "変換後"},
+            "label": {"type": "plain_text", "text": "やわらか"},
         }
 
         blocks.append(block_3)
@@ -235,13 +236,14 @@ def app1_create_view(
             "block_id": APP1_MODAL1_BLOCK4_ID,
             "text": {"type": "mrkdwn", "text": "送信先を選択"},
             "accessory": {
-                "type": "channels_select",
+                "type": "users_select",
                 "action_id": APP1_MODAL1_BLOCK4_ACTIONID,
                 "placeholder": {
                     "type": "plain_text",
                     "text": "Select a user",
                     "emoji": True,
                 },
+                "initial_user": "U07RNU50QKW",
             },
         }
 
@@ -276,7 +278,7 @@ def app1_create_view(
     return {
         "type": "modal",
         "callback_id": callback_id,
-        "title": {"type": "plain_text", "text": "タスク管理くん"},
+        "title": {"type": "plain_text", "text": "やわらかコミュニケーター"},
         "submit": {"type": "plain_text", "text": "送信"},
         "close": {"type": "plain_text", "text": "閉じる"},
         "blocks": blocks,
@@ -507,7 +509,9 @@ def handle_action_app1_modal1_block2(
 
 
 @app.view(APP1_CALLBACK_ID)
-def handle_view_app1_callback(ack: Ack, body: dict, logger: logging.Logger):
+def handle_view_app1_callback(
+    ack: Ack, body: dict, logger: logging.Logger, client: WebClient
+):
 
     ack()
 
@@ -611,12 +615,67 @@ def handle_view_app1_callback(ack: Ack, body: dict, logger: logging.Logger):
 
         logger.debug(json.dumps(blocks, indent=2, ensure_ascii=False))
 
-        response = requests.post(
-            url,
-            json={"blocks": blocks},
-        )
+        # response = requests.post(
+        #     url,
+        #     json={"blocks": blocks},
+        # )
 
-        logger.debug(response.text)
+        # logger.debug(response.text)
+
+        client.chat_postMessage(channel=selected_user, blocks=blocks)
+
+
+@app.event("message")
+def handle_message_events(
+    ack: Ack, body: dict, logger: logging.Logger, client: WebClient
+):
+    logger.info(body)
+    ack()
+
+    event = body["event"]
+    user = event["user"]
+    ts = event["ts"]
+    thread_ts = event.get("thread_ts", None)
+    text = event["text"]
+
+    logger.info(body)
+
+    channel_id = event["channel"]
+    history = client.conversations_history(channel=channel_id, limit=10)
+    messages = history["messages"]
+
+    messages = sorted(messages, key=lambda x: x["ts"], reverse=False)
+
+    for m in messages:
+        if "blocks" in m:
+            del m["blocks"]
+
+    dt_now = datetime.datetime.now(zoneinfo.ZoneInfo("Asia/Tokyo"))
+    now = dt_now.strftime("%Y年%m月%d日 %H:%M:%S")
+
+    response = requests.post(
+        DIFY_API_APP_URL,
+        headers={"Authorization": f"Bearer {DIFY_API_APP4_TOKEN}"},
+        json={
+            "inputs": {
+                "chat_history": json.dumps(messages, ensure_ascii=False),
+                "today": now,
+                "prompt": text,
+            },
+            "response_mode": "blocking",
+            "user": DIFY_API_TOKEN_USER,
+        },
+    )
+
+    response_json = response.json()
+    output = response_json["data"]["outputs"]["text"]
+
+    client.chat_postMessage(
+        channel=channel_id,
+        thread_ts=thread_ts,
+        user=user,
+        text=output,
+    )
 
 
 @app.action(APP1_MODAL1_BLOCK4_ACTIONID)
